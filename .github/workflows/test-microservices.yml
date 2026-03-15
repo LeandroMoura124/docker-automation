@@ -13,10 +13,10 @@ jobs:
       - name: Checkout de código
         uses: actions/checkout@v4
 
-      - name: Configurar Python 3.12.4
+      - name: Configurar Python 3.13.12
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12.4'
+          python-version: '3.13.12'
 
       - name: Install dependencies
         working-directory: ./burguer-app/auth-service
@@ -35,10 +35,10 @@ jobs:
       - name: Checkout de código
         uses: actions/checkout@v4
 
-      - name: Configurar Python 3.12.4
+      - name: Configurar Python 3.13.12
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12.4'
+          python-version: '3.13.12'
 
       - name: Install dependencies
         working-directory: ./burguer-app/order-service
@@ -57,10 +57,10 @@ jobs:
       - name: Checkout de código
         uses: actions/checkout@v4
 
-      - name: Configurar Python 3.12.4
+      - name: Configurar Python 3.13.12
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12.4'
+          python-version: '3.13.12'
 
       - name: Install dependencies
         working-directory: ./burguer-app/product-service
@@ -79,10 +79,10 @@ jobs:
       - name: Checkout de código
         uses: actions/checkout@v4
 
-      - name: Configurar Python 3.12.4
+      - name: Configurar Python 3.13.12
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12.4'
+          python-version: '3.13.12'
 
       - name: Install dependencies
         working-directory: ./burguer-app/user-service
@@ -94,3 +94,4 @@ jobs:
         run: |
           pytest -v --cov=models --cov=services --cov=config --cov=controllers
           radon cc ./models/user_model.py
+

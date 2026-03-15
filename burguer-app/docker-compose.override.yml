@@ -15,25 +15,22 @@ services:
     networks:
       - microservices-network
 
-  # ✅ Sobrescreve as envs dos microserviços para usar o Mongo local
+  # ✅ URI do Mongo: use .env com MONGO_URI ou padrão local
   auth-service:
     environment:
-      - MONGO_URI=${MONGO_URI}
-
+      - MONGO_URI=${MONGO_URI:-mongodb://root:example@mongo:27017}
 
   user-service:
     environment:
-      - MONGO_URI=${MONGO_URI}
-
+      - MONGO_URI=${MONGO_URI:-mongodb://root:example@mongo:27017}
 
   order-service:
     environment:
-      - MONGO_URI=${MONGO_URI}
-
+      - MONGO_URI=${MONGO_URI:-mongodb://root:example@mongo:27017}
 
   product-service:
     environment:
-      - MONGO_URI=${MONGO_URI}
+      - MONGO_URI=${MONGO_URI:-mongodb://root:example@mongo:27017}
 
 volumes:
   mongo_data:
