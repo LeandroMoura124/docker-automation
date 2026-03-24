@@ -124,24 +124,29 @@ jobs:
           pip install -r requirements.txt
           pytest -v
 
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.65.0_Linux-64bit.deb
-          sudo dpkg -i trivy_0.65.0_Linux-64bit.deb
-
       - name: Scan auth-service image with Trivy
-        run: trivy image --severity HIGH,CRITICAL burguer-app-auth-service:latest
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 1 \
+            burguer-app-auth-service:latest
 
       - name: Scan user-service image with Trivy
-        run: trivy image --severity HIGH,CRITICAL burguer-app-user-service:latest
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 1 \
+            burguer-app-user-service:latest
 
       - name: Scan product-service image with Trivy
-        run: trivy image --severity HIGH,CRITICAL burguer-app-product-service:latest
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 1 \
+            burguer-app-product-service:latest
 
       - name: Scan order-service image with Trivy
-        run: trivy image --severity HIGH,CRITICAL burguer-app-order-service:latest
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 1 \
+            burguer-app-order-service:latest
 
       - name: Run Safety check (user-service)
         working-directory: burguer-app
