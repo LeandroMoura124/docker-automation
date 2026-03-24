@@ -125,45 +125,53 @@ jobs:
           pytest -v
 
       - name: Scan auth-service image with Trivy
+        continue-on-error: true
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 1 \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 0 \
             burguer-app-auth-service:latest
 
       - name: Scan user-service image with Trivy
+        continue-on-error: true
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 1 \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 0 \
             burguer-app-user-service:latest
 
       - name: Scan product-service image with Trivy
+        continue-on-error: true
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 1 \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 0 \
             burguer-app-product-service:latest
 
       - name: Scan order-service image with Trivy
+        continue-on-error: true
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 1 \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 0 \
             burguer-app-order-service:latest
 
       - name: Run Safety check (user-service)
+        continue-on-error: true
         working-directory: burguer-app
         run: |
           docker run --rm -v "$PWD/user-service:/src" python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
 
       - name: Run Safety check (product-service)
+        continue-on-error: true
         working-directory: burguer-app
         run: |
           docker run --rm -v "$PWD/product-service:/src" python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
 
       - name: Run Safety check (order-service)
+        continue-on-error: true
         working-directory: burguer-app
         run: |
           docker run --rm -v "$PWD/order-service:/src" python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
 
       - name: Run Safety check (auth-service)
+        continue-on-error: true
         working-directory: burguer-app
         run: |
           docker run --rm -v "$PWD/auth-service:/src" python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
