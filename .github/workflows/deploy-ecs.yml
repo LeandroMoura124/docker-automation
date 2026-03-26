@@ -62,6 +62,6 @@ jobs:
       - name: Force new deployment on ECS services
         run: |
           aws ecs update-service --cluster "$CLUSTER_NAME" --service "auth-service" --force-new-deployment
-          aws ecs update-service --cluster "$CLUSTER_NAME" --service "auth-task-service-zy1ragky" --force-new-deployment
+          aws ecs update-service --cluster "$CLUSTER_NAME" --service "user-service" --force-new-deployment
           aws ecs update-service --cluster "$CLUSTER_NAME" --service "order-service" --force-new-deployment
           aws ecs update-service --cluster "$CLUSTER_NAME" --service "product-service" --force-new-deployment
