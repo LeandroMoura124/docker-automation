@@ -25,32 +25,36 @@ jobs:
       - name: Build and push Docker images
         run: |
           # Auth service
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/auth-service:latest ./burguer-app/auth-service
-          docker tag ${{ secrets.DOCKER_USERNAME }}/auth-service:latest \
-                     ${{ secrets.DOCKER_USERNAME }}/auth-service:${{ github.sha }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:${{ github.sha }}
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/auth-service:latest \
+            -t ${{ secrets.DOCKER_USERNAME }}/auth-service:${{ github.sha }} \
+            ./burguer-app/auth-service \
+            --push
 
           # User service
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/user-service:latest ./burguer-app/user-service
-          docker tag ${{ secrets.DOCKER_USERNAME }}/user-service:latest \
-                     ${{ secrets.DOCKER_USERNAME }}/user-service:${{ github.sha }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/user-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/user-service:${{ github.sha }}
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/user-service:latest \
+            -t ${{ secrets.DOCKER_USERNAME }}/user-service:${{ github.sha }} \
+            ./burguer-app/user-service \
+            --push
 
           # Order service
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/order-service:latest ./burguer-app/order-service
-          docker tag ${{ secrets.DOCKER_USERNAME }}/order-service:latest \
-                     ${{ secrets.DOCKER_USERNAME }}/order-service:${{ github.sha }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/order-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/order-service:${{ github.sha }}
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/order-service:latest \
+            -t ${{ secrets.DOCKER_USERNAME }}/order-service:${{ github.sha }} \
+            ./burguer-app/order-service \
+            --push
 
           # Product service
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/product-service:latest ./burguer-app/product-service
-          docker tag ${{ secrets.DOCKER_USERNAME }}/product-service:latest \
-                     ${{ secrets.DOCKER_USERNAME }}/product-service:${{ github.sha }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/product-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/product-service:${{ github.sha }}
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/product-service:latest \
+            -t ${{ secrets.DOCKER_USERNAME }}/product-service:${{ github.sha }} \
+            ./burguer-app/product-service \
+            --push
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
