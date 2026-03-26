@@ -1,8 +1,6 @@
 services:
   auth-service:
-    build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+    image: ${DOCKER_USER}/auth-service:${VERSION}
     container_name: auth-service
     ports:
       - "5000:5000"
@@ -12,9 +10,7 @@ services:
       - microservices-network
 
   user-service:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile
+    image: ${DOCKER_USER}/user-service:${VERSION}
     container_name: user-service
     ports:
       - "5001:5001"
@@ -24,9 +20,7 @@ services:
       - microservices-network
 
   order-service:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
+    image: ${DOCKER_USER}/order-service:${VERSION}
     container_name: order-service
     ports:
       - "5002:5002"
@@ -36,9 +30,7 @@ services:
       - microservices-network
 
   product-service:
-    build:
-      context: ./product-service
-      dockerfile: Dockerfile
+    image: ${DOCKER_USER}/product-service:${VERSION}
     container_name: product-service
     ports:
       - "5003:5003"

@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 env:
-  CLUSTER_NAME: app-cluster
+  CLUSTER_NAME: alura
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
