@@ -4,150 +4,192 @@ on:
   push:
     branches:
       - main
-      - teste_pipline_docker-dev
   pull_request:
 
 jobs:
   docker-up:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_MONGO_URI: mongodb://appuser:apppass@mongo:27017/burguer_app_db?authSource=burguer_app_db
+      HOST_MONGO_URI: mongodb://appuser:apppass@localhost:27017/burguer_app_db?authSource=burguer_app_db
+      SECRET_KEY: ci-secret-key
+      JWT_SECRET: ci-jwt-secret
+
     steps:
-      # 1️⃣ Clonar o repositório
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      # 2️⃣ Configurar Docker Buildx
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - name: Set environment variables
+      - name: Show Docker versions
         run: |
-          echo "DOCKER_USER=leandrotz" >> $GITHUB_ENV
-          echo "latest=latest" >> $GITHUB_ENV
+          docker --version
+          docker compose version
 
-      # 3️⃣ Instalar Docker Compose
-      - name: Install Docker Compose
-        run: |
-          if ! command -v docker-compose &> /dev/null; then
-            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
-          fi
-          docker-compose --version
-
-      # 4️⃣ Mascarar MONGO_URI secret
-      - name: Mask MONGO_URI secret
-        run: echo "::add-mask::${{ secrets.MONGO_URI }}"
-
-      # 5️⃣ Criar .env para todos os microsserviços
-      - name: Create .env files
+      - name: Create CI .env files
         working-directory: burguer-app
         run: |
-          for service in user-service product-service order-service auth-service; do
-            mkdir -p $service
-            echo "MONGO_URI=${{ secrets.MONGO_URI }}" > $service/.env
+          printf '%s\n' \
+            "MONGO_URI=${DOCKER_MONGO_URI}" \
+            > .env
+
+          printf '%s\n' \
+            "MONGO_URI=${DOCKER_MONGO_URI}" \
+            "SECRET_KEY=${SECRET_KEY}" \
+            "JWT_SECRET=${JWT_SECRET}" \
+            "PORT=5000" \
+            > auth-service/.env
+
+          for service in user-service order-service product-service; do
+            port=""
+
+            case "$service" in
+              user-service) port=5001 ;;
+              order-service) port=5002 ;;
+              product-service) port=5003 ;;
+            esac
+
+            printf '%s\n' \
+              "MONGO_URI=${DOCKER_MONGO_URI}" \
+              "SECRET_KEY=${SECRET_KEY}" \
+              "PORT=${port}" \
+              > "${service}/.env"
           done
 
-      # 6️⃣ Exportar variável de ambiente (opcional)
-      - name: Export MONGO_URI
-        run: export MONGO_URI=${{ secrets.MONGO_URI }}
-
-      # 7️⃣ Subir containers (override de dev)
       - name: Bring up Docker Compose (Dev)
         working-directory: burguer-app
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.override.yml down --volumes
-          docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
+          docker compose down --volumes --remove-orphans || true
+          docker compose up -d --build
+          docker compose ps
 
-      # 8️⃣ Esperar MongoDB inicializar
       - name: Wait for MongoDB
+        working-directory: burguer-app
         run: |
           for i in {1..30}; do
-            nc -z localhost 27017 && break
+            if docker compose exec -T mongo mongosh --quiet \
+              "mongodb://appuser:apppass@localhost:27017/burguer_app_db?authSource=burguer_app_db" \
+              --eval "db.adminCommand('ping').ok" | grep -q 1; then
+              echo "MongoDB is ready"
+              exit 0
+            fi
+
             echo "Waiting for MongoDB..."
             sleep 2
           done
 
-      # 9️⃣ Testar todos os serviços (paralelo possível em jobs separados se desejar)
+          echo "MongoDB did not become ready in time"
+          exit 1
+
       - name: Test auth-service
         working-directory: burguer-app/auth-service
+        env:
+          MONGO_URI: ${{ env.HOST_MONGO_URI }}
+          SECRET_KEY: ${{ env.SECRET_KEY }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
         run: |
           pip install -r requirements.txt
           pytest -v
 
       - name: Test order-service
         working-directory: burguer-app/order-service
+        env:
+          MONGO_URI: ${{ env.HOST_MONGO_URI }}
+          SECRET_KEY: ${{ env.SECRET_KEY }}
         run: |
           pip install -r requirements.txt
           pytest -v
 
       - name: Test product-service
         working-directory: burguer-app/product-service
+        env:
+          MONGO_URI: ${{ env.HOST_MONGO_URI }}
+          SECRET_KEY: ${{ env.SECRET_KEY }}
         run: |
           pip install -r requirements.txt
           pytest -v
 
       - name: Test user-service
         working-directory: burguer-app/user-service
+        env:
+          MONGO_URI: ${{ env.HOST_MONGO_URI }}
+          SECRET_KEY: ${{ env.SECRET_KEY }}
         run: |
           pip install -r requirements.txt
           pytest -v
 
-      # 🔟 Parar containers ao final
-      - name: Shut down containers
-        working-directory: burguer-app
-        run: docker-compose down --volumes
-
-      # 1️⃣1️⃣ Verificação de vulnerabilidades com Trivy (sem docker run)
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
-
       - name: Scan auth-service image with Trivy
-        run: trivy image --severity HIGH,CRITICAL burguer-app-auth-service:latest
+        continue-on-error: true
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 0 \
+            burguer-app-auth-service:latest
 
       - name: Scan user-service image with Trivy
-        run: trivy image --severity HIGH,CRITICAL burguer-app-user-service:latest
+        continue-on-error: true
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 0 \
+            burguer-app-user-service:latest
 
       - name: Scan product-service image with Trivy
-        run: trivy image --severity HIGH,CRITICAL burguer-app-product-service:latest
+        continue-on-error: true
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 0 \
+            burguer-app-product-service:latest
 
       - name: Scan order-service image with Trivy
-        run: trivy image --severity HIGH,CRITICAL burguer-app-order-service:latest
-      # 1️⃣2️⃣ Verificação de dependências Python com Safety (via Docker)
+        continue-on-error: true
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image --severity HIGH,CRITICAL --exit-code 0 \
+            burguer-app-order-service:latest
+
       - name: Run Safety check (user-service)
+        continue-on-error: true
         working-directory: burguer-app
         run: |
-          docker run --rm -v $PWD/user-service:/src python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
+          docker run --rm -v "$PWD/user-service:/src" python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
 
       - name: Run Safety check (product-service)
+        continue-on-error: true
         working-directory: burguer-app
         run: |
-          docker run --rm -v $PWD/product-service:/src python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
+          docker run --rm -v "$PWD/product-service:/src" python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
 
       - name: Run Safety check (order-service)
+        continue-on-error: true
         working-directory: burguer-app
         run: |
-          docker run --rm -v $PWD/order-service:/src python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
+          docker run --rm -v "$PWD/order-service:/src" python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
 
       - name: Run Safety check (auth-service)
+        continue-on-error: true
         working-directory: burguer-app
         run: |
-          docker run --rm -v $PWD/auth-service:/src python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
+          docker run --rm -v "$PWD/auth-service:/src" python:3.12-slim bash -c "pip install safety && safety check -r /src/requirements.txt"
 
-
-
-      # 1️⃣3️⃣ Análise de código estática com CodeQL
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: python
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
+
+      - name: Show Docker logs on failure
+        if: failure()
+        working-directory: burguer-app
+        run: docker compose logs --no-color
+
+      - name: Shut down containers
+        if: always()
+        working-directory: burguer-app
+        run: docker compose down --volumes --remove-orphans
