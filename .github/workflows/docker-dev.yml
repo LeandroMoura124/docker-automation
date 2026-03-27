@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - main
+      - teste_pipline_docker-dev
   pull_request:
-
+  
 jobs:
   docker-up:
     runs-on: ubuntu-latest
@@ -17,6 +18,11 @@ jobs:
       # 2️⃣ Configurar Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
+      - name: Set environment variables
+        run: |
+          echo "DOCKER_USER=leandrotz" >> $GITHUB_ENV
+          echo "latest=latest" >> $GITHUB_ENV
 
       # 3️⃣ Instalar Docker Compose
       - name: Install Docker Compose
