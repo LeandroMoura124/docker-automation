@@ -10,7 +10,7 @@ jobs:
   docker-up:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Clonar o repositório
+      # 1️⃣ Clonar o repositório - 
       - name: Checkout repository
         uses: actions/checkout@v3
 
