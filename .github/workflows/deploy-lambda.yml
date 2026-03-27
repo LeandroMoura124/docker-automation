@@ -9,7 +9,7 @@ env:
   ZIP_FILE: auth_service_lambda.zip
   RUNTIME: python3.12
   HANDLER: lambda_function.lambda_handler
-  REGION: us-east-1
+  REGION: sa-east-1
 
 
 jobs:
