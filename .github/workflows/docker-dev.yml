@@ -103,15 +103,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y trivy
 
+      #Listando images docker antes de scanear com trivy
+      - name: List Docker images
+        run: docker images
+
       # 1️⃣1️⃣ Scan de vulnerabilidades
       - name: Scan auth-service image
-        run: trivy image --severity HIGH,CRITICAL --exit-code 1 burguer-app-auth-service:latest
+        run: trivy image --severity HIGH,CRITICAL --exit-code 1 leandrotz/auth-service:latest
 
       - name: Scan user-service image
-        run: trivy image --severity HIGH,CRITICAL --exit-code 1 burguer-app-user-service:latest
+        run: trivy image --severity HIGH,CRITICAL --exit-code 1 leandrotz/user-service:latest
 
       - name: Scan product-service image
-        run: trivy image --severity HIGH,CRITICAL --exit-code 1 burguer-app-product-service:latest
+        run: trivy image --severity HIGH,CRITICAL --exit-code 1 leandrotz/product-service:latest
 
       - name: Scan order-service image
-        run: trivy image --severity HIGH,CRITICAL --exit-code 1 burguer-app-order-service:latest
+        run: trivy image --severity HIGH,CRITICAL --exit-code 1 leandrotz/order-service:latest
